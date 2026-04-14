@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Union, Tuple
 
 import fastdup
-from fastdup.utils import shorten_path
+from fastdup.utilities import shorten_path
 import numpy as np
 from fastdup.sentry import v1_sentry_handler, fastdup_capture_exception
 from fastdup.fastdup_controller import FastdupController

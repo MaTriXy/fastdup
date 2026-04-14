@@ -1,5 +1,5 @@
 
-# FastDup Software, (C) copyright 2025 Dr. Amir Alush and Dr. Danny Bickson.
+# FastDup Software, (C) copyright 2022 Dr. Amir Alush and Dr. Danny Bickson.
 # This software is free for non-commercial and academic usage under the Creative Common Attribution-NonCommercial-NoDerivatives
 # 4.0 International license. Please reach out to info@databasevisual.com for licensing options.
 
@@ -768,7 +768,7 @@ def visualize_top_components(work_dir, save_path, num_components, get_label_func
     '''
 
     try:
-        from fastdup.tensorboard_projector import generate_sprite_image
+        from fastdup import generate_sprite_image
         import traceback
     except Exception as ex:
         print(ex)
@@ -912,6 +912,10 @@ def visualize_top_components(work_dir, save_path, num_components, get_label_func
                 img, labels = generate_sprite_image(images,  len(images), '', labels, h=avg_h, w=avg_w, alternative_width=len(images), max_width=max_width)
             else:
                 img, labels = generate_sprite_image(images,  len(images), '', labels, h=avg_h, w=avg_w, max_width=max_width)
+
+            if img is None:
+                print(f"Failed to generate sprite image for component {component_id}, skipping...")
+                continue
 
             all_labels.append(labels)
             #all_files.append(files)
@@ -1844,7 +1848,7 @@ def do_create_similarity_gallery(similarity_file, save_path, num_images=20, lazy
     distances = df.groupby('from')['distance'].apply(list)
     assert len(tos), "Empty list"
 
-    if 'label' in df.columns:
+    if 'label' in df.columns and 'label2' in df.columns:
         subdf = pd.DataFrame({'to':tos, 'label':top_labels_from, 'label2':top_labels_to, 'distance':distances}).reset_index()
     else:
         subdf = pd.DataFrame({'to':tos, 'distance':distances}).reset_index()

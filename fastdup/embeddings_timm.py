@@ -6,7 +6,7 @@ from PIL import Image
 from tqdm.auto import tqdm
 from fastdup.sentry import fastdup_capture_exception
 from fastdup.image import fastdup_imread
-from fastdup.utils import get_images_from_path
+from fastdup.utilities import get_images_from_path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("fastdup.embeddings.timm")

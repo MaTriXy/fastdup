@@ -11,7 +11,7 @@ import shutil
 import fastdup.definitions as FD
 #import boto3
 from fastdup import _LOGGER, _create_fastdup_logger
-from fastdup.sentry import v1_sentry_handler, fastdup_capture_exception, fastdup_capture_log_debug_state, fastdup_metrics_increment
+from fastdup.sentry import v1_sentry_handler, fastdup_capture_exception, fastdup_metrics_increment
 from fastdup.definitions import FOLDER_FULL_IMAGE_RUN
 from fastdup.utilities import convert_coco_dict_to_df, shorten_path, _create_template_msg, _POST_RUN_MSG
 import pathlib
@@ -70,8 +70,6 @@ class FastdupController:
 
         self._has_split = self._df_annot is not None and FD.ANNOT_SPLIT in self._df_annot
         self._has_label = self._df_annot is not None and FD.ANNOT_LABEL in self._df_annot
-        fastdup_capture_log_debug_state({"fastdup_applied": self._fastdup_applied, "run_mode":self._run_mode,
-                                         "bbox": self._bbox, "has_split": self._has_split, "has_label": self._has_label})
 
         if self._logger.getEffectiveLevel() <= logging.INFO:
             print(_create_template_msg(self._work_dir, self._input_dir))
@@ -110,7 +108,6 @@ class FastdupController:
         :param data_type: image or bbox
         :param overwrite: overwrite existing fastdup state (delete work_dir)
         """
-        fastdup_capture_log_debug_state(locals())
         if overwrite:
             clean_work_dir(self._work_dir)
             #shutil.rmtree(self._work_dir, ignore_errors=True)
@@ -336,7 +333,7 @@ class FastdupController:
 
         """
         assert isinstance(img_path, str) or isinstance(img_path, pathlib.Path)
-        ret = self.run(input_dir=[img_path], model_path=model_path, d=d, overwrite=True, print_summary=False, run_mode=1, run_explore=False)
+        ret = self.run(input_dir=[img_path], model_path=model_path, d=d, overwrite=True, print_summary=False, run_mode=1)
         if ret != 0:
             return ret
         files, embs = self.embeddings()
@@ -489,6 +486,7 @@ class FastdupController:
         if 'crop_filename' in external_df.columns:
             crop_files = external_df.groupby(group_by_col)['crop_filename'].apply(list)
         labels = None
+        components = None
         if group_by == 'visual' and 'label' in external_df.columns:
             labels = external_df.groupby(group_by_col)['label'].apply(list)
         elif group_by == "label":
@@ -522,7 +520,7 @@ class FastdupController:
     @v1_sentry_handler
     def run(self, input_dir: Union[str, Path] = None, annotations: Union[pd.DataFrame,list] = None, subset: list = None,
             embeddings=None, data_type: str = FD.IMG, overwrite: bool = False,
-            print_summary: bool = False, print_vl_datasets_ref: bool = False, run_explore: bool = True, dataset_name: str = None, verbose: bool=False,
+            print_summary: bool = False, verbose: bool=False,
             run_fast: bool=False,
             **fastdup_kwargs):
         """
@@ -551,7 +549,6 @@ class FastdupController:
         :param fastdup_kwargs: (Optional) fastdup run arguments, see fastdup.run() documentation
 
         """
-        fastdup_capture_log_debug_state(locals())
         fastdup_metrics_increment('run')
 
         if self._fastdup_applied and not overwrite:
@@ -593,10 +590,6 @@ class FastdupController:
             if 'run_advanced_stats' in fastdup_kwargs:
                 assert not fastdup_kwargs['run_advanced_stats'], "When computing a model on embeddings advanced_stats are not computed. If you like to compute stats run with run_stats_only=True without embeddings on a clean work_dir."
             self._run_stats = False
-            run_explore = False
-
-        if 'bounding_box' in fastdup_kwargs:
-            run_explore = False
 
         if self._pre_calc_features is not None:
             fastdup_kwargs['run_mode'] = 2
@@ -614,8 +607,12 @@ class FastdupController:
         # run fastdup - create embeddings
         fastdup_input = self._set_fastdup_input()
         if not run_fast:
-            if fastdup.run(fastdup_input, work_dir=str(self._work_dir), logger=self._logger, **fastdup_kwargs) != 0:
-                raise RuntimeError('Fastdup execution failed')
+            try:
+                if fastdup.run(fastdup_input, work_dir=str(self._work_dir), logger=self._logger, **fastdup_kwargs) != 0:
+                    raise RuntimeError('Fastdup execution failed')
+            except Exception as e:
+                fastdup_capture_exception("fastdup_controller_run_execution", e)
+                raise
         
             # post process - map fastdup-id to image (for bbox this is done in self._set_fastdup_input)
             if self._dtype == FD.IMG or self._run_mode == FD.MODE_CROP:
@@ -629,33 +626,13 @@ class FastdupController:
             self._save_artifacts(fastdup_kwargs)
             self._fastdup_applied = True
 
-        if run_explore:
-            fastdup_metrics_increment('run_with_explore')
-            from fastdup.fastdup_runner.run import do_visual_layer
-            vl_input = self._input_dir if user_columns is None else self.annotations()[user_columns]
-            num_images = fastdup_kwargs.get('num_images', None)
-            if num_images is not None:
-                assert isinstance(num_images, int), "num_images argument should be int"
-                os.environ["FASTDUP_NUM_IMAGES"] = str(num_images)
-            do_visual_layer(work_dir=self._work_dir, input_dir=vl_input,
-                            dataset_name=dataset_name, overwrite=overwrite, run_server=False, verbose=verbose)
-        else:
-            fastdup_metrics_increment('run_without_explore')
-
         if print_summary:
             self.summary(show_comp = fastdup_kwargs.get('run_stats_only', 0 ) == 0)
-        if print_vl_datasets_ref:
-            self.vl_datasets_ref_printout()
 
         if self._logger.getEffectiveLevel() <= logging.INFO:
             print(_POST_RUN_MSG)
 
         return 0
-    
-    def explore(self, verbose=False) -> None:
-        from fastdup.fastdup_runner.run import do_visual_layer
-        fastdup_metrics_increment('explore')
-        do_visual_layer(work_dir=self._work_dir, overwrite=False, run_server=True, verbose=verbose)
 
     def summary(self, verbose=True, blur_threshold: float = 150.0, brightness_threshold: float = 253.0,
                 darkness_threshold: float = 4.0, show_comp: bool = True) -> List[str]:

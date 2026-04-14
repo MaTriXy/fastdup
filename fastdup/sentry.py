@@ -1,7 +1,7 @@
 #Sentry collects crash reports and performance numbers
 #It is possible to turn off data collection using an environment variable named "SENTRY_OPT_OUT"
 import sentry_sdk
-from sentry_sdk import capture_exception
+from sentry_sdk import capture_exception, metrics
 
 import time
 import os
@@ -86,6 +86,8 @@ def fastdup_capture_exception(section, e, warn_only=False, extra=""):
             scope.set_tag("platform.version", platform.version())
             scope.set_tag("python", sys.version.strip().replace("\n", " "))
             scope.set_tag("production", "FASTDUP_PRODUCTION" in os.environ)
+            import pip
+            scope.set_tag("pip", pip.__version__)
             if extra != "":
                 scope.set_tag("extra", extra)
             capture_exception(e, scope=scope)
@@ -131,9 +133,7 @@ def v1_sentry_handler(func):
     @wraps(func)
     def inner_function(*args, **kwargs):
         try:
-            start_time = time.time()
             ret = func(*args, **kwargs)
-            fastdup_performance_capture(f"V1:{func.__name__}", start_time)
             return ret
 
         except RuntimeError as ex:
@@ -147,3 +147,12 @@ def v1_sentry_handler(func):
             fastdup_capture_exception(f"V1:{func.__name__}", ex)
             raise ex
     return inner_function
+
+def fastdup_metrics_increment(key: str):
+    if 'SENTRY_OPT_OUT' not in os.environ:
+        key = f"fastdup.{key}"
+        metrics.incr(
+            key=key,
+            value=1,
+        )
+    

@@ -2,7 +2,7 @@ from fastdup.utilities import _DOC_MSG, dcheck_latest_version, is_macos_intel, i
 __doc__ = _DOC_MSG
 
 
-#FastDup Software, (C) copyright 2025 Dr. Amir Alush and Dr. Danny Bickson.
+#FastDup Software, (C) copyright 2022 Dr. Amir Alush and Dr. Danny Bickson.
 #This software is free for non-commercial and academic usage under the Creative Common Attribution-NonCommercial-NoDerivatives
 #4.0 International license. Please reach out to info@databasevisual.com for licensing options.
 
@@ -29,7 +29,7 @@ from fastdup.galleries import do_create_similarity_gallery, do_create_outliers_g
     do_create_components_gallery, do_create_duplicates_gallery
 import contextlib
 from fastdup import coco
-from fastdup.sentry import init_sentry, fastdup_capture_exception, fastdup_performance_capture, fastdup_capture_log_debug_state, fastdup_metrics_increment
+from fastdup.sentry import init_sentry, fastdup_capture_exception, fastdup_performance_capture, fastdup_metrics_increment
 from fastdup.definitions import *
 from fastdup.utilities import *
 from datetime import datetime
@@ -180,7 +180,6 @@ def do_run(input_dir='',
            high_accuracy=False,
            logger: logging.Logger = _LOGGER):
 
-    fastdup_capture_log_debug_state(locals())
     start_time = time.time()
 
     if "FASTDUP_CORE_LIMIT" in os.environ:
@@ -235,7 +234,6 @@ def do_run(input_dir='',
               "bounding_box": bounding_box, "batch_size": batch_size, "resume": resume, "high_accuracy": high_accuracy}
 
     # in case of failure crash report store current config
-    fastdup_capture_log_debug_state(config)
     assert isinstance(work_dir, (str, pathlib.Path)), f"Work dir should be a str or pathlib.Path got {work_dir}"
     work_dir = shorten_path(work_dir)
     try:
@@ -631,7 +629,6 @@ def run(input_dir='',
         ret (int): Status code 0 = success, 1 = error.
 
     '''
-    fastdup_capture_log_debug_state(locals())
 
     _input_dir = input_dir
     fd_model = False
@@ -643,7 +640,7 @@ def run(input_dir='',
         elif bounding_box == 'yolov5s' or bounding_box == 'quick_yolov5s':
             assert "dinov2" not in os.path.basename(model_path), "Can not run a combination of yolov5s and dinov2 models, please remove one of them"
             local_model = find_model(bounding_box, YOLOV5S_MODEL)
-        elif bounding_box in ['rotated', 'xywh_bbox', 'ocr']:
+        elif bounding_box in ['rotated', 'xywh_bbox', 'ocr', 'quick_ocr']:
             local_model = model_path
 
         turi_param = turi_param.replace('save_crops=0','') + ",save_crops=1"
@@ -667,7 +664,7 @@ def run(input_dir='',
                      distance=distance,
                      threshold=threshold,
                      lower_threshold=lower_threshold,
-                     model_path=local_model,
+                     model_path=local_model,  # pylint: disable=possibly-used-before-assignment
                      license=license,
                      version=version,
                      nearest_neighbors_k=nearest_neighbors_k,
@@ -820,7 +817,6 @@ def run_on_webdataset(input_dir='',
     You can control the free space using the flags turi_param='delete_tar=1|0' and delete_img='1|0'.  When delete_tar=1 the tars are processed one by one and deleted after processing.
     When delete_img=1 the images are processed one by one and deleted after processing.
     '''
-    fastdup_capture_log_debug_state(locals())
 
     ret = run(input_dir=input_dir, work_dir=work_dir, test_dir=test_dir, compute=compute, verbose=verbose, num_threads=num_threads, num_images=num_images,
               turi_param=turi_param, distance=distance, threshold=threshold,
@@ -892,7 +888,6 @@ def save_binary_feature(save_path, filenames, np_array, save_prefix = ""):
         ret (int): 0 in case of success, otherwise 1
 
     '''
-    fastdup_capture_log_debug_state(locals())
 
     assert isinstance(save_path, str)  and save_path.strip() != "", "Save path should be a non empty string"
     assert isinstance(filenames, list), "filenames should be a list of image files"
@@ -979,7 +974,6 @@ def check_params(work_dir, num_images, lazy_load, get_label_func, slice, save_pa
 
 
 def load_dataframe(file_type, type, input_dir, work_dir, kwargs, cols):
-    fastdup_capture_log_debug_state(locals())
 
     assert type in ["similarity","outliers"]
     nrows = None
@@ -1047,7 +1041,6 @@ def load_dataframe(file_type, type, input_dir, work_dir, kwargs, cols):
 
 
 def remove_duplicate_video_distances(df, kwargs):
-    fastdup_capture_log_debug_state(locals())
 
     #remove duplicate indications into the same video
     df['subfolder1'] = df['from'].apply(lambda x: os.path.dirname(x))
@@ -1147,7 +1140,6 @@ def create_duplicates_gallery(similarity_file, save_path, num_images=20, descend
         save_artifacts (boolean): Optional parameter to allow saving the intermediate artifacts (raw images, csv with results) to the output folder
 
    '''
-    fastdup_capture_log_debug_state(locals())
 
     try:
         start_time = time.time()
@@ -1227,7 +1219,6 @@ def create_duplicate_videos_gallery(similarity_file, save_path, num_images=20, d
    '''
 
     try:
-        fastdup_capture_log_debug_state(locals())
         start_time = time.time()
         ret = check_params(similarity_file, num_images, lazy_load, get_label_func, slice, save_path, max_width)
         if ret != 0:
@@ -1309,8 +1300,7 @@ def create_outliers_gallery(outliers_file, save_path, num_images=20, lazy_load=F
      '''
 
     try:
-        fastdup_capture_log_debug_state(locals())
-
+    
         start_time = time.time()
         ret = check_params(outliers_file, num_images, lazy_load, get_label_func, slice, save_path, max_width)
         if ret != 0:
@@ -1399,7 +1389,6 @@ def create_components_gallery(work_dir, save_path, num_images=20, lazy_load=Fals
 
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
         ret = check_params(work_dir, num_images, lazy_load, get_label_func, slice, save_path, max_width)
         if ret != 0:
             return ret
@@ -1495,8 +1484,7 @@ def create_component_videos_gallery(work_dir, save_path, num_images=20, lazy_loa
 
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         kwargs['is_video'] = True
         df, input_dir, work_dir = load_dataframe(work_dir, "similarity", input_dir, work_dir, kwargs, ["from", "to", "distance"])
         df = remove_duplicate_video_distances(df, kwargs)
@@ -1570,8 +1558,7 @@ def create_kmeans_clusters_gallery(work_dir, save_path, num_images=20, lazy_load
 
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         if isinstance(work_dir, str):
             config = load_config(os.path.dirname(work_dir))
             if input_dir is None and config is not None and 'input_dir' in config:
@@ -1592,7 +1579,6 @@ def create_kmeans_clusters_gallery(work_dir, save_path, num_images=20, lazy_load
         fastdup_capture_exception("create_kmeans_clusters_gallery", ex)
 
 def inner_delete(files, dry_run, how, save_path=None, verbose=True):
-    fastdup_capture_log_debug_state(locals())
     if dry_run and not verbose:
         return 0
 
@@ -1695,8 +1681,7 @@ def delete_components_by_label(top_components_file,  min_items=10, min_distance=
     '''
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         assert os.path.exists(top_components_file), "top_components_file should be a path to a file"
 
         # label is ,component_id,files,labels,to,distance,blur,len
@@ -1794,8 +1779,7 @@ def delete_or_retag_stats_outliers(stats_file, metric, filename_col = 'filename'
     '''
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         assert isinstance(dry_run, bool)
         assert how == 'delete' or how == 'move' or how == 'retag', "how should be one of 'delete'|'move'|'retag'"
         if how == 'move':
@@ -1877,71 +1861,6 @@ def delete_or_retag_stats_outliers(stats_file, metric, filename_col = 'filename'
     except Exception as e:
         fastdup_capture_exception("delete_or_retag_stats_outliers", e)
 
-def export_to_tensorboard_projector(work_dir, log_dir, sample_size = 900,
-                                    sample_method='random', with_images=True, get_label_func=None, d=576, file_list=None):
-    '''
-    Export feature vector embeddings to be visualized using tensorboard projector app.
-
-    Example:
-        >>> import fastdup
-        >>> fastdup.run('/my/data/', work_dir='out')
-        >>> fastdup.export_to_tensorboard_projector(work_dir='out', log_dir='logs')
-
-        After data is exporeted run tensorboard projector
-        >>> %load_ext tensorboard
-        >>> %tensorboard --logdir=logs
-
-    Args:
-        work_dir (str): work_dir where fastdup results are stored
-
-        log_dir (str): output dir where tensorboard will read from
-
-        sample_size (int): how many images to view. Default is 900.
-
-        sample_method (str): how to sample, currently 'random' is supported.
-
-        with_images (bool): add images to the visualization (default True)
-
-        get_label_func (callable): optional function given an absolute path to an image return the image label.
-            Image label can be a string or a list of strings. Alternatively, get_label_func can be a dictionary where the key is the absolute file name and the value is the label or list of labels.
-            Alternatively, get_label_func can be a filename containing string label for each file. First row should be index,label. Label file should be same length and same order of the atrain_features_data.csv image list file.
-
-        d (int): dimension of the embedding vector. Default is 576.
-
-        file_list (list): Optional parameter to specify a list of files to be used for the visualization. If not specified, filenames are taken from the work_dir/atrain_features.dat.csv file
-                      Note: be careful here as the order of the file_list matters, need to keep the exact same order as the atrain_features.dat.csv file!
-    Returns:
-        ret (int): 0 in case of success, 1 in case of failure
-    '''
-
-    try:
-        start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
-        try:
-            import tensorflow
-            from tensorboard.plugins import projector
-        except Exception as ex:
-            print('For saving information for tensorboard project you need to install tensorflow. Please pip install tensorflow and tensorbaord and try again')
-            fastdup_capture_exception("tensorflow import", ex)
-            return 1
-
-
-        from fastdup.tensorboard_projector import export_to_tensorboard_projector_inner
-        if not os.path.exists(work_dir):
-            os.mkdir(work_dir)
-            assert os.path.exists(work_dir), 'Failed to create work_dir ' + work_dir
-        assert os.path.exists(os.path.join(work_dir, 'atrain_features.dat')), f'Faild to find fastdup output {work_dir}atrain_features.dat'
-        assert sample_size <= 5000, f'Tensorboard projector is limited by 5000 images'
-
-        imglist, features = load_binary_feature(os.path.join(work_dir, 'atrain_features.dat'), d=d)
-        if file_list is not None:
-            assert isinstance(file_list, list), 'file_list should be a list of absolute file names given in the same order'
-            assert len(file_list) == len(imglist), "file_list should be the same length as imglist got " + str(len(file_list)) + " and " + str(len(imglist))
-        export_to_tensorboard_projector_inner(imglist, features, log_dir, sample_size, sample_method, with_images, get_label_func, d=d)
-
-    except Exception as ex:
-        fastdup_capture_exception("export_to_tensorboard_projector", ex)
 
 
 def read_coco_labels(path):
@@ -1952,7 +1871,7 @@ def read_coco_labels(path):
 
 def generate_sprite_image(img_list, sample_size, log_dir, get_label_func=None, h=0, w=0, alternative_filename=None, alternative_width = None, max_width=None, **kwargs):
     '''
-    Generate a sprite image of images for tensorboard projector. A sprite image is a large image composed of grid of smaller images.
+    Generate a sprite image composed of grid of smaller images.
 
     Parameters:
         img_list (list): list of image filenames (full path)
@@ -1986,18 +1905,106 @@ def generate_sprite_image(img_list, sample_size, log_dir, get_label_func=None, h
 
     '''
     try:
+        from PIL import Image
+        import math
+        
         assert len(img_list), "Image list is empty"
         assert sample_size > 0
         if alternative_filename is None:
-            if not os.path.exists(log_dir):
+            if log_dir and not os.path.exists(log_dir):
                 os.makedirs(log_dir, exist_ok=True)
 
-        from fastdup.tensorboard_projector import generate_sprite_image as tgenerate_sprite_image
-        ret = tgenerate_sprite_image(img_list, sample_size, log_dir, get_label_func, h=h, w=w,
-                                      alternative_filename=alternative_filename, alternative_width=alternative_width, max_width=max_width, kwargs=kwargs)
-        return ret
+        IMAGE_SIZE = 100
+        images_pil = []
+        labels = []
+        H = IMAGE_SIZE if h == 0 else h
+        W = IMAGE_SIZE if w == 0 else w
+
+        if max_width is not None and h != 0 and w != 0:
+            if W > max_width:
+                scale = 1.0*W/max_width
+                H = int(1.0*H/scale)
+                W = int(1.0*w/scale)
+        else:
+            if W > 320:
+                scale = 1.0*W/320
+                H = int(1.0*H/scale)
+                W = int(1.0*W/scale)
+
+        if alternative_width is not None:
+            NUM_IMAGES_WIDTH = alternative_width
+            if (alternative_width < sample_size):
+                sample_size = alternative_width
+            height = 1
+        elif kwargs and 'force_width' in kwargs and 'force_height' in kwargs:
+            assert isinstance(kwargs['force_width'], int), "force_width must be an integer"
+            assert isinstance(kwargs['force_height'], int), "force_height must be an integer"
+            if kwargs['force_width'] * kwargs['force_height'] > len(img_list):
+                print(f"Warning: missing images for a full grid, requested {kwargs['force_width'] * kwargs['force_height']} got {len(img_list)}")
+            NUM_IMAGES_WIDTH = kwargs['force_width']
+            height = kwargs['force_height']
+        else:
+            NUM_IMAGES_WIDTH = int(1.4*math.ceil(math.sqrt(min(sample_size, len(img_list)))))
+            divs = int(math.ceil(min(sample_size,len(img_list)) / NUM_IMAGES_WIDTH))
+            height = min(divs, NUM_IMAGES_WIDTH)
+
+        for i, im in enumerate(img_list[:sample_size]):
+            try:
+                if isinstance(im, str):
+                    assert os.path.exists(im)
+                    img_pil = cv2.imread(im)
+                    assert img_pil is not None, f"Failed to read image from {im}"
+                    img_pil = cv2.cvtColor(img_pil, cv2.COLOR_BGR2RGB)
+                    img_pil = cv2.resize(img_pil, (W, H))
+                else:
+                    img_pil = cv2.resize(im, (W, H))
+                    img_pil = cv2.cvtColor(img_pil, cv2.COLOR_BGR2RGB)
+                images_pil.append(Image.fromarray(img_pil))
+
+                # Get label
+                if callable(get_label_func):
+                    label = get_label_func(im)
+                elif isinstance(get_label_func, list):
+                    label = get_label_func[i]
+                else:
+                    label = "N/A"
+                labels.append(label)
+            except Exception as ex:
+                print(f"Failed to load image {im}: {ex}")
+                continue
+
+        # Create sprite image
+        spriteimage = Image.new(
+            mode='RGB',
+            size=(W*NUM_IMAGES_WIDTH, H*height),
+            color=(255,255,255)
+        )
+        for count, image in enumerate(images_pil):
+            h_loc = count // NUM_IMAGES_WIDTH
+            w_loc = count % NUM_IMAGES_WIDTH
+            spriteimage.paste(image, (w_loc*W, h_loc*H))
+
+        if max_width is not None:
+            factor = max_width / spriteimage.width
+            spriteimage = spriteimage.resize((int(spriteimage.width * factor), int(spriteimage.height * factor)))
+
+        if isinstance(img_list[0], str):
+            if alternative_filename is not None:
+                SPRITE_PATH = alternative_filename
+                spriteimage.convert('RGB').save(SPRITE_PATH)
+                return SPRITE_PATH, labels
+            elif log_dir:
+                SPRITE_PATH = f'{log_dir}/sprite.png'
+                spriteimage.convert('RGB').save(SPRITE_PATH)
+                return SPRITE_PATH, labels
+            else:
+                return np.array(spriteimage.convert('RGB')), labels
+        else:
+            return np.array(spriteimage.convert('RGB')), labels
+
     except Exception as ex:
         fastdup_capture_exception("generate_sprite_image", ex)
+        return None, []
 
 
 def find_top_components(work_dir, get_label_func=None, group_by='visual', slice=None, threshold=None, metric=None,
@@ -2042,8 +2049,7 @@ def find_top_components(work_dir, get_label_func=None, group_by='visual', slice=
     '''
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         from .galleries import do_find_top_components
         ret = do_find_top_components(work_dir, get_label_func, group_by, slice, threshold=threshold,
                                       metric=metric, descending=descending, min_items=min_items, max_items = max_items,
@@ -2123,8 +2129,7 @@ def init_search(k, work_dir, d = 576, model_path = model_path_full, verbose=Fals
                 turi_param += "store_int=1"
             else:
                 turi_param+=',store_int=1'
-        fastdup_capture_log_debug_state(locals())
-
+    
         assert os.path.exists(model_path), "Failed to find model_path " + model_path
         assert d > 0, "d must be greater than 0"
         assert k > 1, "k must be >= 2"
@@ -2186,7 +2191,6 @@ def search(filename, img=None, verbose=False):
 
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
         from PIL import Image
         from fastdup.image import fastdup_imread
         if img is None:
@@ -2271,7 +2275,6 @@ def vector_search(filename = "query_vector", vec=None, verbose=False):
             os.unlink(local_error_file)
 
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
         from numpy.ctypeslib import ndpointer
         fun = dll.vector_search
         fun.restype = c_int
@@ -2382,8 +2385,7 @@ def create_stats_gallery(stats_file, save_path, num_images=20, lazy_load=False, 
 
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         ret = check_params(stats_file, num_images, lazy_load, get_label_func, slice, save_path, max_width)
         if ret != 0:
             return ret
@@ -2465,8 +2467,7 @@ def create_similarity_gallery(similarity_file, save_path, num_images=20, lazy_lo
 
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         ret = check_params(similarity_file, num_images, lazy_load, get_label_func, slice, save_path, max_width)
         if ret != 0:
             return ret
@@ -2559,8 +2560,7 @@ def create_knn_classifier(work_dir, k, get_label_func, threshold=None):
     '''
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         from fastdup.confusion_matrix import classification_report
 
         assert os.path.exists(work_dir), "Failed to find work directory " + work_dir
@@ -2578,6 +2578,8 @@ def create_knn_classifier(work_dir, k, get_label_func, threshold=None):
         else:
             if os.path.isdir(work_dir):
                 similarity_file = os.path.join(work_dir, FILENAME_SIMILARITY)
+            else:
+                similarity_file = work_dir
             df = pd.read_csv(similarity_file)
 
         labels_dict = None
@@ -2648,8 +2650,7 @@ def create_kmeans_classifier(work_dir, k, get_label_func, threshold=None):
     '''
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         from fastdup.confusion_matrix import classification_report
 
         assert callable(get_label_func) or isinstance(get_label_func, dict) or (isinstance(get_label_func, str) and os.path.exists(get_label_func)), \
@@ -2719,8 +2720,7 @@ def run_kmeans(input_dir='',
     """
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         assert num_clusters >= 2, "Number of clusters must be at least 2, got {}".format(num_clusters)
         assert num_em_iter >=1, "Number of EM iterations must be at least 1, got {}".format(num_em_iter)
 
@@ -2780,8 +2780,7 @@ def run_kmeans_on_extracted(input_dir='',
 
     try:
         start_time = time.time()
-        fastdup_capture_log_debug_state(locals())
-
+    
         assert num_clusters >= 2, "Number of clusters must be at least 2, got {}".format(num_clusters)
         assert num_em_iter >=1, "Number of EM iterations must be at least 1, got {}".format(num_em_iter)
 
@@ -2869,7 +2868,6 @@ def extract_video_frames(input_dir, work_dir, verbose=False,
     Returns:
         ret (int): Status code 0 = success, 1 = error.
     """
-    fastdup_capture_log_debug_state(locals())
     assert no_sort in [0,1]
     assert resume in [0,1]
 
@@ -2990,24 +2988,8 @@ def iterate_on_webdatasets(input_dir, work_dir=None, bounding_box=None, caption=
 from fastdup.engine import Fastdup
 from typing import Union, Optional, List
 import fastdup.fastdup_controller as FD
-from fastdup.fastdup_runner.run import do_visual_layer
 
 def create(work_dir: Union[str, Path]=None, input_dir: Union[str, Path] = None) -> Fastdup:
     fastdup_metrics_increment('create')
     fd = Fastdup(work_dir=work_dir, input_dir=input_dir)
     return fd
-
-@v1_sentry_handler
-def explore(work_dir: Union[str, Path], input_dir: Optional[Union[str, Path, List[str]]] = None,
-            dataset_name: Optional[str] = None, overwrite: bool = False, verbose: bool = False) -> None:
-    do_visual_layer(work_dir, input_dir, dataset_name, overwrite, verbose=verbose)
-
-def cli() -> None:
-    parser = ArgumentParser()
-    parser.add_argument('-w', '--work-dir', type=str, required=True)
-    parser.add_argument('-i', '--input-dir', type=str, default=None)
-    parser.add_argument('-n', '--dataset-name', type=str, default=None)
-    parser.add_argument('--overwrite', action='store_true')
-
-    args = parser.parse_args()
-    explore(work_dir=args.work_dir, input_dir=args.input_dir, dataset_name=args.dataset_name, overwrite=args.overwrite)

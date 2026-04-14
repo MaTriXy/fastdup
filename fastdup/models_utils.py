@@ -206,7 +206,7 @@ def plot_annotations(
             for mask in masks:
                 color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
                 h, w = mask.shape[-2:]
-                mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
+                mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)  # pylint: disable=too-many-function-args
                 axes[idx][subplot_idx].imshow(mask_image, alpha=0.9)
 
     plt.tight_layout()

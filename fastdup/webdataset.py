@@ -26,18 +26,18 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
     """
 
     print('Going to merge filenames')
-    fa =open('atrain_' + FILENAME_IMAGE_LIST, 'w')
-    fa.write(f"{IMAGELIST_HEADER}\n")
+    fa =open('atrain_' + definitions.FILENAME_IMAGE_LIST, 'w')
+    fa.write(f"{definitions.IMAGELIST_HEADER}\n")
     counter = 0
     files = 0
     for i in tqdm(sorted(os.listdir(work_dir))):
-        if i.endswith(FILENAME_IMAGE_LIST) and i != 'atrain_' + FILENAME_IMAGE_LIST:
+        if i.endswith(definitions.FILENAME_IMAGE_LIST) and i != 'atrain_' + definitions.FILENAME_IMAGE_LIST:
             files+=1
             with open(i) as f:
                 line='aa'
                 while(line is not None and line != '') :
                     line = f.readline().strip()
-                    if line == IMAGELIST_HEADER:
+                    if line == definitions.IMAGELIST_HEADER:
                         continue
                     ret = line.split(',')
                     if len(ret) == 2:
@@ -49,7 +49,7 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
         assert counter == num_images
 
     if test_dir != '':
-        fa =open('atrain_' + IMAGELIST_HEADER, 'a')
+        fa =open('atrain_' + definitions.FILENAME_IMAGE_LIST, 'a')
         files = 0
         for i in tqdm(sorted(os.listdir(test_dir))):
             if i.endswith('features.dat.csv') and i != 'atrain_features.dat.csv':
@@ -58,7 +58,7 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
                     line='aa'
                     while(line is not None and line != '' ) :
                         line = f.readline().strip()
-                        if line == IMAGELIST_HEADER:
+                        if line == definitions.IMAGELIST_HEADER:
                             continue
                         ret = line.split(',')
                         if len(ret) == 2:
@@ -73,12 +73,12 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
 
     if merge_labels:
         print("Going to merge labels")
-        fa =open('atrain_' + FILENAME_LABELS, 'w')
-        fa.write(f"{LABEL_HEADER}\n")
+        fa =open('atrain_' + definitions.FILENAME_LABELS, 'w')
+        fa.write(f"{definitions.LABEL_HEADER}\n")
         counter = 0
         files = 0
         for i in tqdm(sorted(os.listdir(work_dir))):
-            if i.endswith(FILENAME_LABELS) and i != 'atrain_' + FILENAME_LABELS:
+            if i.endswith(definitions.FILENAME_LABELS) and i != 'atrain_' + definitions.FILENAME_LABELS:
                 files+=1
                 with open(os.path.join(work_dir, i), 'r', encoding='latin') as f:
                     with open(i.replace('labels', 'features.dat')) as f1:
@@ -87,7 +87,7 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
                         while(line0 is not None and line0 != '' ) :
                             try:
                                 line2 = line.strip()
-                                if line2 == LABEL_HEADER:
+                                if line2 == definitions.LABEL_HEADER:
                                     line = f.readline()
                                     line0 = f1.readline()
                                 ret = line2.find(',')
@@ -107,10 +107,10 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
             assert counter == num_images
 
         if test_dir != '':
-            fa =open('atrain_' + LABEL_HEADER, 'a')
+            fa =open('atrain_' + definitions.FILENAME_LABELS, 'a')
             files = 0
             for i in tqdm(sorted(os.listdir(work_dir))):
-                if i.endswith(FILENAME_LABELS) and i != 'atrain_' + FILENAME_LABELS:
+                if i.endswith(definitions.FILENAME_LABELS) and i != 'atrain_' + definitions.FILENAME_LABELS:
                     files+=1
                     with open(os.path.join(test_dir,  i), 'r', encoding='latin') as f:
                         with open(os.path.join(test_dir, i.replace('labels', 'features.dat'))) as f1:
@@ -119,7 +119,7 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
                             while(line0 is not None and line0 != '' ) :
                                 try:
                                     line2 = line.strip()
-                                    if line2 == STATS_HEADER:
+                                    if line2 == definitions.STATS_HEADER:
                                         line = f.readline()
                                         line0 = f1.readline()
                                     ret = line2.find(',')
@@ -142,7 +142,7 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
     if merge_stats:
         print("Going to merge stats")
         fa =open('atrain_stats.csv', 'w')
-        fa.write(f"{STATS_HEADER}\n")
+        fa.write(f"{definitions.STATS_HEADER}\n")
         counter = 0
         files = 0
         for i in tqdm(sorted(os.listdir('.'))):
@@ -152,7 +152,7 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
                     line='aa'
                     while(line is not None and line != '' ) :
                         line = f.readline().strip()
-                        if line == STATS_HEADER:
+                        if line == definitions.STATS_HEADER:
                             continue
                         ret = line.find(',')
                         if ret >= 1:
@@ -165,16 +165,16 @@ def merge_webdataset_low_memory(work_dir, test_dir='', num_images=None, num_imag
             assert counter == num_images
 
 
-        fa =open('atrain_' + FILENAME_STATS, 'a')
+        fa =open('atrain_' + definitions.FILENAME_IMAGE_STATS, 'a')
         files = 0
         for i in tqdm(sorted(os.listdir(test_dir))):
-            if i.endswith(FILENAME_STATS) and i != 'atrain_' + FILENAME_STATS:
+            if i.endswith(definitions.FILENAME_IMAGE_STATS) and i != 'atrain_' + definitions.FILENAME_IMAGE_STATS:
                 files+=1
-                with open(os.psth.join(test_dir,  i)) as f:
+                with open(os.path.join(test_dir,  i)) as f:
                     line='aa'
                     while(line is not None and line != '') :
                         line = f.readline().strip()
-                        if line == HEADER_STATS:
+                        if line == definitions.STATS_HEADER:
                             continue
                         ret = line.find(',')
                         if ret >= 1:
@@ -198,17 +198,17 @@ def filter_similarity_low_memory(work_dir, out_file, threshold):
     """
     assert isinstance(threshold, float)
     assert threshold < 1 and threshold > 0
-    sim_file = os.path.join(work_dir, FILENAME_SIMILARITY) if os.path.isdir(work_dir) else work_dir
+    sim_file = os.path.join(work_dir, definitions.FILENAME_SIMILARITY) if os.path.isdir(work_dir) else work_dir
     assert os.path.exists(sim_file)
     assert out_file != sim_file
     fa = open(out_file, 'w')
-    fa.write(f"{SIMILARITY_HEADER, EADER}\n")
+    fa.write(f"{definitions.SIMILARITY_HEADER}\n")
     f =open(sim_file, 'r')
     line = 'aa'
     counter = 0
     while(line is not None and line != ''):
         line = f.readline().strip()
-        if line == SIMILARITY_HEADER:
+        if line == definitions.SIMILARITY_HEADER:
             continue
         ret = line.split(',')
         if len(ret) == 3:

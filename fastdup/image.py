@@ -1,5 +1,5 @@
 
-# FastDup Software, (C) copyright 2025 Dr. Amir Alush and Dr. Danny Bickson.
+# FastDup Software, (C) copyright 2022 Dr. Amir Alush and Dr. Danny Bickson.
 # This software is free for non-commercial and academic usage under the Creative Common Attribution-NonCommercial-NoDerivatives
 # 4.0 International license. Please reach out to info@databasevisual.com for licensing options.
 
@@ -20,23 +20,14 @@ from PIL import Image
 from pillow_heif import register_heif_opener
 import tempfile
 
-register_heif_opener()
-
+try:
+    register_heif_opener()
+except Exception as e:
+    print("Failed to register heif support")
 
 
 def safe_replace(path):
     return path.replace('/','_').replace('\\','_').replace(":",'_')
-
-
-def enhance_image(image):
-    # Convert image to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # Apply histogram equalization
-    equalized = cv2.equalizeHist(gray)
-
-    # Return equalized image
-    return equalized
 
 def get_shape(img):
     if len(img.shape) == 2:
@@ -44,6 +35,22 @@ def get_shape(img):
     else:
         h, w, c = img.shape
     return h, w, c
+
+
+def enhance_image(image):
+    shape = get_shape(image)
+    if shape[2] == 3:
+
+        # Convert image to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image
+
+    # Apply histogram equalization
+    equalized = cv2.equalizeHist(gray)
+
+    # Return equalized image
+    return equalized
 
 def calc_image_path(lazy_load, save_path, filename, filename_suffix=''):
     if lazy_load:
@@ -228,6 +235,8 @@ def check_valid_image_extension(filename):
 def fastdup_imwrite(local_file, im):
     has_extension = check_valid_image_extension(local_file)
     if has_extension:
+        if local_file.lower().endswith('.heic') or local_file.lower().endswith('.heif'):
+            local_file = local_file + ".jpg"
         ret = cv2.imwrite(local_file, im)
     else:
         local_file_wext = local_file + '.jpg'
@@ -245,14 +254,18 @@ def fastdup_imwrite(local_file, im):
             file, ext = os.path.splitext(local_file)
             tmp_filename = str(uuid.uuid4()) + ext
             ret = cv2.imwrite(tmp_filename, im)
-            if os.path.exists(local_file):
-                os.unlink(local_file)
-            shutil.move(tmp_filename, local_file)
+            # if os.path.exists(local_file):
+            #     os.unlink(local_file)
+            # shutil.move(tmp_filename, local_file)
+            assert os.path.isfile(tmp_filename)
+            return tmp_filename
+
         finally:
             assert ret, f"Failed to save img to {local_file} most likely filename is too long for the OS"
     elif ret == False:
         assert ret,  f"Failed to save img to {local_file}"
     assert os.path.isfile(local_file), "Failed to save img to " + local_file
+    return local_file
 
 def get_type(str):
     if 'train' in str:
@@ -327,7 +340,8 @@ def plot_bounding_box(img, get_bounding_box_func, filename):
     for i in bbox_list:
         cur_bbox = i
         cur_bbox = [int(x) for x in cur_bbox]
-        img = cv2.rectangle(img, (cur_bbox[0], cur_bbox[1]), (cur_bbox[2], cur_bbox[3]), (0, 255, 0), 3)
+        if len(cur_bbox) == 4:
+            img = cv2.rectangle(img, (cur_bbox[0], cur_bbox[1]), (cur_bbox[2], cur_bbox[3]), (0, 255, 0), 3)
     return img
 
 
@@ -435,6 +449,6 @@ def create_triplet_img(index, row, work_dir, save_path, extract_filenames, get_b
         hcon_img_path = f'{save_path}/images/{pid}_{index}.jpg'
     else:
         hcon_img_path = f'{save_path}/{pid}_{index}.jpg'
-    fastdup_imwrite(hcon_img_path, hcon_img)
+    hcon_img_path = fastdup_imwrite(hcon_img_path, hcon_img)
     return hcon_img, hcon_img_path
 

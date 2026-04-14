@@ -163,14 +163,12 @@ def multilabel_confusion_matrix(
     #print(y_pred)
 
     tp_bins_weights = None
+    true_sum = pred_sum = tp_sum = np.zeros(len(labels))
 
     if len(tp_bins):
         tp_sum = np.bincount(
             tp_bins, weights=tp_bins_weights, minlength=len(labels)
         )
-    else:
-        # Pathological case
-        true_sum = pred_sum = tp_sum = np.zeros(len(labels))
     if len(y_pred):
         pred_sum = np.bincount(y_pred, weights=sample_weight, minlength=len(labels))
     if len(y_true):
@@ -199,7 +197,7 @@ def multilabel_confusion_matrix(
     else:
         tn = y_true.shape[0] - tp - fp - fn
 
-    return np.array([tn, fp, fn, tp]).T.reshape(-1, 2, 2)
+    return np.array([tn, fp, fn, tp]).T.reshape(-1, 2, 2)  # pylint: disable=too-many-function-args
 
 def _check_set_wise_labels(y_true, y_pred, average, labels, pos_label):
     """Validation associated with set-wise metrics.

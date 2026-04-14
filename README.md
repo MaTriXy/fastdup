@@ -93,6 +93,14 @@ fd = fastdup.create(input_dir="IMAGE_FOLDER/")
 fd.run()
 ```
 
+Remove duplicates from your dataset in a single call:
+
+```python
+import fastdup
+fastdup.remove_duplicates("IMAGE_FOLDER/")
+```
+This finds and deletes duplicate images (similarity > 0.96 by default) directly from disk. Use `dry_run=True` to preview which files would be removed before deleting, and adjust the `distance` parameter to control the similarity threshold.
+
 ![run](./gallery/fastdup_install.gif)
 
 Visualize the results in a static gallery:

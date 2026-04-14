@@ -50,7 +50,7 @@ def init_captioning(model_name='automatic', device='cpu', batch_size=8, max_new_
     models = {
         'automatic': "nlpconnect/vit-gpt2-image-captioning",
         'vitgpt2': "nlpconnect/vit-gpt2-image-captioning",
-        'blip-2': "Salesforce/blip2-opt-2.7b",
+        'blip2': "Salesforce/blip2-opt-2.7b",
         'blip': "Salesforce/blip-image-captioning-large"
     }
     assert model_name in models.keys(), f"Unknown captioning model {model_name} allowed models are {models.keys()}"

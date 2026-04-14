@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 import pandas as pd
 from fastdup.datasets import Dataset, load_dataset
-from datasets.config import HF_DATASETS_CACHE
+from datasets.config import HF_DATASETS_CACHE  # pylint: disable=no-name-in-module
 from fastdup.sentry import fastdup_capture_exception
 from PIL import Image
 from tqdm.auto import tqdm
