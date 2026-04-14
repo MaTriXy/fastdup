@@ -93,16 +93,9 @@ fd = fastdup.create(input_dir="IMAGE_FOLDER/")
 fd.run()
 ```
 
-Explore the results in a interactive web UI:
-
-```python
-fd.explore()   
-```
-
-
 ![run](./gallery/fastdup_install.gif)
 
-Alternatively, visualize the result in a static gallery:
+Visualize the results in a static gallery:
 
 ```python
 fd.vis.duplicates_gallery()    # gallery of duplicates
